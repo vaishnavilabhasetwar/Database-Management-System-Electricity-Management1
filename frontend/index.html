@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerLog | My Electricity Tracker</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-gray-50 flex transition-colors duration-300" id="bodyTag">
+
+    <div class="w-64 h-screen bg-indigo-900 text-white p-6 sticky top-0 shadow-xl z-20">
+        <h1 class="text-2xl font-bold mb-10 flex items-center">
+            <i class="fas fa-bolt mr-3 text-yellow-400"></i>MyPower
+        </h1>
+        <nav class="space-y-4">
+            <a href="#" class="block p-3 bg-indigo-800 rounded transition border-l-4 border-yellow-400 font-semibold">
+                <i class="fas fa-chart-line mr-2"></i> My Dashboard
+            </a>
+            <a href="#historySection" class="block p-3 hover:bg-indigo-700 rounded transition">
+                <i class="fas fa-history mr-2"></i> Payment History
+            </a>
+        </nav>
+    </div>
+
+    <main class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition-colors duration-300" id="topNav">
+            <div class="flex items-center space-x-4">
+                <label class="font-bold text-gray-600 text-sm uppercase tracking-wider">Property:</label>
+                <select id="propertySwitcher" class="p-2 border rounded-lg bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700" onchange="switchProperty()">
+                    <option value="Home">🏠 Home</option>
+                    <option value="Office">🏢 Office</option>
+                    <option value="Shop">🛍️ Shop</option>
+                </select>
+            </div>
+            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition text-indigo-600 w-10 h-10 flex items-center justify-center">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-semibold text-gray-800" id="mainTitle">Electricity Analysis</h2>
+                <p class="text-gray-500 text-sm">Track and predict your energy consumption</p>
+            </div>
+            <button id="openModal" class="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-indigo-700 transition font-bold transform hover:scale-105">
+                <i class="fas fa-plus mr-2"></i> Add Reading
+            </button>
+        </header>
+
+        <div class="mb-8">
+            <input type="text" id="searchInput" placeholder="Search by Month (e.g. 2025-01)..." 
+                   class="w-full p-3 border rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-colors duration-300">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transform hover:-translate-y-1 transition stat-card">
+                <p class="text-gray-400 font-medium text-sm uppercase">Total Paid Amount</p>
+                <h3 class="text-2xl font-bold text-green-600" id="totalRev">$0.00</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transform hover:-translate-y-1 transition stat-card">
+                <p class="text-gray-400 font-medium text-sm uppercase">Pending Bills</p>
+                <h3 class="text-2xl font-bold text-red-500" id="unpaidCount">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transform hover:-translate-y-1 transition stat-card">
+                <p class="text-gray-400 font-medium text-sm uppercase">Last Usage</p>
+                <h3 class="text-2xl font-bold text-blue-500" id="totalUnits">0 kWh</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-xl text-white shadow-lg">
+                <h3 class="font-bold mb-3 flex items-center text-lg">
+                    <i class="fas fa-clock mr-2"></i> Peak Hours Tracker
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-white/20 pb-1">
+                        <span>06:00 - 10:00 (Off-Peak)</span>
+                        <span class="font-bold text-green-300">₹ Low Rate</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/20 pb-1">
+                        <span>18:00 - 22:00 (Peak)</span>
+                        <span class="font-bold text-red-300">₹₹ High Rate</span>
+                    </div>
+                </div>
+                <p class="mt-4 text-xs italic bg-white/10 p-2 rounded flex items-center">
+                    <i class="fas fa-lightbulb mr-2 text-yellow-300"></i> Tip: Use Washing Machine before 10 AM to save money!
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 stat-card">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-calculator mr-2 text-green-500"></i> Tariff Slab Estimator
+                </h3>
+                <div class="space-y-4">
+                    <input type="number" id="unitInput" placeholder="Enter expected units (kWh)" 
+                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" oninput="calculateSlab()">
+                    <div id="slabResult" class="text-xl font-bold text-indigo-600">Estimated: ₹0.00</div>
+                    <p id="slabWarning" class="text-[11px] font-medium text-orange-500 uppercase tracking-tighter h-2"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-10 border border-gray-100 stat-card">
+            <h3 class="text-lg font-bold mb-4 text-gray-700"><i class="fas fa-chart-bar mr-2 text-indigo-500"></i>Monthly Usage Trend</h3>
+            <div class="h-[250px]">
+                <canvas id="consumptionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div id="predictionInfo" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 stat-card flex flex-col justify-center">
+                <p class="text-sm text-gray-400 italic text-center">AI Prediction Loading...</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 stat-card">
+                <h3 class="text-lg font-bold mb-4 text-gray-700"><i class="fas fa-plug mr-2 text-orange-500"></i> Appliance Breakdown (Estimate)</h3>
+                
+                <div class="flex gap-4 flex-wrap">
+                    <label class="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50 transition border-gray-200 px-3 text-sm">
+                        <input type="checkbox" name="appliance" value="150" onclick="calculateApplianceUsage()" class="w-4 h-4 rounded text-indigo-600"> Air Conditioner
+                    </label>
+                    <label class="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50 transition border-gray-200 px-3 text-sm">
+                        <input type="checkbox" name="appliance" value="80" onclick="calculateApplianceUsage()" class="w-4 h-4 rounded text-indigo-600"> Water Heater
+                    </label>
+                    <label class="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50 transition border-gray-200 px-3 text-sm">
+                        <input type="checkbox" name="appliance" value="40" onclick="calculateApplianceUsage()" class="w-4 h-4 rounded text-indigo-600"> Fridge
+                    </label>
+                    <label class="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50 transition border-gray-200 px-3 text-sm">
+                        <input type="checkbox" name="appliance" value="30" onclick="calculateApplianceUsage()" class="w-4 h-4 rounded text-indigo-600"> Washing Machine
+                    </label>
+                </div>
+                <p id="applianceTotal" class="mt-3 font-bold text-indigo-600 h-6"></p>
+                </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 mb-10 stat-card">
+            <h3 class="p-4 font-bold text-gray-700 border-b bg-gray-50/50 flex items-center">
+                <i class="fas fa-list mr-2 text-indigo-500"></i> Recent Bill Records
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 font-bold text-gray-600 text-sm uppercase">Month</th>
+                            <th class="p-4 font-bold text-gray-600 text-sm uppercase">Units (kWh)</th>
+                            <th class="p-4 font-bold text-gray-600 text-sm uppercase">Bill Amount</th>
+                            <th class="p-4 font-bold text-gray-600 text-sm uppercase text-center">Status</th>
+                            <th class="p-4 font-bold text-gray-600 text-sm uppercase text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billTableBody" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="historySection" class="bg-white p-6 rounded-xl shadow-md border border-gray-100 stat-card">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-history mr-2 text-indigo-600"></i> Detailed Payment History
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-3 text-gray-600 font-semibold border-b text-sm uppercase">Month</th>
+                            <th class="p-3 text-gray-600 font-semibold border-b text-sm uppercase">Consumer</th>
+                            <th class="p-3 text-gray-600 font-semibold border-b text-sm uppercase text-right">Amount</th>
+                            <th class="p-3 text-gray-600 font-semibold border-b text-sm uppercase text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentHistoryBody" class="divide-y divide-gray-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl w-96 shadow-2xl border border-gray-100 transition-all">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                <i class="fas fa-plus-circle mr-2 text-indigo-600"></i> New Meter Reading
+            </h3>
+            <form id="billForm" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Select Month:</label>
+                    <input type="month" id="month" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Units Consumed (kWh):</label>
+                    <input type="number" id="reading" placeholder="e.g. 150" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Payment Status:</label>
+                    <select id="status" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                </div>
+                <div class="flex space-x-2 pt-4">
+                    <button type="button" id="closeModal" class="flex-1 bg-gray-100 py-2 rounded-lg font-semibold hover:bg-gray-200 transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
